@@ -1,6 +1,6 @@
 def display_menu():
     print("\n========================")
-    print("       TASK MANAGER")
+    print("    TASK MANAGER v2")
     print("1. Add Task")
     print("2. View Tasks")
     print("3. Delete Tasks")
@@ -53,6 +53,7 @@ def main():
         else:
             print("Feature coming soon!")
 
+# Working on JSON saving feature
 
 if __name__ == "__main__":
     main()
