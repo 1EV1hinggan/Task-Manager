@@ -1,6 +1,6 @@
 def display_menu():
     print("\n========================")
-    print("         TASK MANAGER")
+    print("       TASK MANAGER")
     print("1. Add Task")
     print("2. View Tasks")
     print("3. Delete Tasks")
@@ -21,9 +21,29 @@ def main():
         elif choice == "2":
             if not tasks:
                 print("No task found.")
+
             else:
+                print("\nTASK LIST")
                 for i in range(len(tasks)):
                     print(f"{i + 1}. {tasks[i]}")
+
+        elif choice == "3":
+            if not tasks:
+                print("No task/s to delete.")
+                continue
+            else:
+                print("\nTASK LIST")
+                for i in range(len(tasks)):
+                    print(f"{i + 1}. {tasks[i]}")
+
+            num_del = int(input("\nEnter the task's number to delete: "))
+
+            if num_del < 1 or num_del > len(tasks):
+                print("Invalid task number.")
+
+            else:
+                tasks.pop(num_del - 1)
+                print("Task deleted successfully!")
 
         elif choice == "4":
             print("Goodbye!")
