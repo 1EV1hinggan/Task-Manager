@@ -46,7 +46,7 @@ def main():
                 print("Task deleted successfully!")
 
         elif choice == "4":
-            print("Goodbye, Levi!")
+            print("Goodbye, Levi! Thanks for using Task Manager!")
             break
 
 
