@@ -46,7 +46,7 @@ def main():
                 print("Task deleted successfully!")
 
         elif choice == "4":
-            print("Goodbye!")
+            print("Goodbye! See you next time!")
             break
 
 
