@@ -1,14 +1,9 @@
 # --- Importing --- #
 import os
-import psycopg
 
-def get_connection():
-    return psycopg.connect(
-        dbname="task_manager",
-        user="postgres",
-        password=os.getenv("DB_PASSWORD"),
-        host="localhost"
-    )
+from database import SessionLocal
+from models import Task
+from sqlalchemy import select
 
 # --- Functions --- #
 
@@ -23,34 +18,31 @@ def display_menu():
 
 def present_task(tasks):
 
-    print("\nTASK LIST")
-
-    print()
+    print("\nTASK LIST\n")
 
     for task in tasks:
-        status = "Completed" if task[2] else "Not Completed"
-        print(f"{task[0]}. {task[1]} - {status}")
+        status = "Completed" if task.completed else "Not Completed"
+
+        print(f"{task.id}. {task.title} - {status}")
 
 def add_task():
     title = input("Enter task: ")
 
-    with get_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute(
-                "INSERT INTO tasks (title) VALUES (%s)",
-                (title,)
-            )
+    with SessionLocal() as session:
+        new_task = Task(title=title)
+
+        session.add(new_task)
+        session.commit()
 
     print("Task added successfully!")
 
 def view_tasks():
-    with get_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute(
-                "SELECT id, title, completed FROM tasks ORDER BY id ASC"
+    with SessionLocal() as session:
+            result = session.execute(
+                select(Task).order_by(Task.id)
             )
 
-            tasks = cursor.fetchall()
+            tasks = result.scalars().all()
 
             if not tasks:
                 print("No task found.")
@@ -58,57 +50,62 @@ def view_tasks():
                 present_task(tasks)
 
 def complete_tasks():
-    with get_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute(
-                "SELECT id, title, completed FROM tasks ORDER BY id ASC"
-            )
+    with SessionLocal() as session:
 
-            tasks = cursor.fetchall()
+        result = session.execute(
+            select(Task).order_by(Task.id)
+        )
 
-            if not tasks:
-                print("No task found.")
-                return
-            
-            present_task(tasks)
+        tasks = result.scalars().all()
 
-            task_id = int(input("\nEnter the task ID to complete: "))
+        if not tasks:
+            print("No task found.")
+            return
 
-            cursor.execute(
-                "UPDATE tasks SET completed = TRUE WHERE id = %s",
-                (task_id,)
-            )
+        present_task(tasks)
 
-            if cursor.rowcount == 0:
-                print(f"Task {task_id} not found.")
-            else:
-                print(f"Task {task_id} marked complete!")
+        task_id = int(input("\nEnter task ID to complete: "))
+
+        task = session.get(Task, task_id)
+
+        if task is None:
+            print(f"Task {task_id} not found.")
+
+        elif task.completed:
+            print(f"Task {task_id} is already completed.")
+
+        else:
+            task.completed = True
+
+            session.commit()
+
+            print(f"Task {task_id} marked complete.")
     
 def delete_tasks():
-    with get_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute(
-                "SELECT id, title, completed FROM tasks ORDER BY id ASC"
-            )
+    with SessionLocal() as session:
 
-            tasks = cursor.fetchall()
+        result = session.execute(
+            select(Task).order_by(Task.id)
+        )
 
-            if not tasks:
-                print("No task found.")
-                return
+        tasks = result.scalars().all()
 
-            present_task(tasks)
+        if not tasks:
+            print("No task found.")
+            return
 
-            task_id = int(input("\nEnter the task ID to delete: "))
+        present_task(tasks)
 
-            cursor.execute(
-                "DELETE FROM tasks WHERE id = %s",
-                (task_id,)
-            )
+        task_id = int(input("\nEnter the task ID to delete: "))
 
-            if cursor.rowcount == 0:
-                print(f"Task {task_id} not found.")
-                return
+        task = session.get(Task, task_id)
+
+        if task is None:
+            print(f"Task {task_id} not found.")
+
+        else:
+            session.delete(task)
+            session.commit()
 
             print(f"Task {task_id} deleted successfully.")
 
