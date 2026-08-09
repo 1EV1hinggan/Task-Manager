@@ -34,101 +34,83 @@ def present_task(tasks):
 def add_task():
     title = input("Enter task: ")
 
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "INSERT INTO tasks (title) VALUES (%s)",
-        (title,)
-    )
-
-    conn.commit()
-
-    cursor.close()
-    conn.close()
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO tasks (title) VALUES (%s)",
+                (title,)
+            )
 
     print("Task added successfully!")
 
 def view_tasks():
-    conn = get_connection()
-    cursor = conn.cursor()
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT id, title, completed FROM tasks ORDER BY id ASC"
+            )
 
-    cursor.execute(
-        "SELECT id, title, completed FROM tasks ORDER BY id ASC"
-    )
+            tasks = cursor.fetchall()
 
-    tasks = cursor.fetchall()
-
-    if not tasks:
-        print("No tasks found.")
-    else:
-        present_task(tasks)
-
-    cursor.close()
-    conn.close()
+            if not tasks:
+                print("No task found.")
+            else:
+                present_task(tasks)
 
 def complete_tasks():
-    conn = get_connection()
-    cursor = conn.cursor()
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT id, title, completed FROM tasks ORDER BY id ASC"
+            )
 
-    cursor.execute(
-        "SELECT id, title, completed FROM tasks"
-    )
+            tasks = cursor.fetchall()
 
-    tasks = cursor.fetchall()
+            if not tasks:
+                print("No task found.")
+                return
+            
+            present_task(tasks)
 
-    if tasks:
-        present_task(tasks)
+            task_id = int(input("\nEnter the task ID to complete: "))
 
-        task_id = int(input("\nEnter the task ID to complete: "))
-        cursor.execute(
-            "UPDATE tasks SET completed = TRUE WHERE id = %s", 
-            (task_id,)
-        )
+            cursor.execute(
+                "UPDATE tasks SET completed = TRUE WHERE id = %s",
+                (task_id,)
+            )
 
-        if cursor.rowcount == 0:
-            print(f"Task {task_id} not found.")
-        else:
-            conn.commit()
-            print(f"Task {task_id} marked completed!")
-
-    else:
-
-        print("No tasks found.")
-
-    cursor.close()
-    conn.close()
+            if cursor.rowcount == 0:
+                print(f"Task {task_id} not found.")
+            else:
+                print(f"Task {task_id} marked complete!")
     
 def delete_tasks():
-    conn = get_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute(
-        "SELECT id, title, completed FROM tasks"
-    )
-    
-    tasks = cursor.fetchall()
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT id, title, completed FROM tasks ORDER BY id ASC"
+            )
 
-    if not tasks:
-        print("No tasks found.")
-    else:
-        present_task(tasks)
+            tasks = cursor.fetchall()
 
-        task_id = int(input("\nEnter the task ID to delete: "))
-        cursor.execute(
-            "DELETE FROM tasks WHERE id = %s",
-            (task_id,)
-        )
+            if not tasks:
+                print("No task found.")
+                return
 
-        if cursor.rowcount == 0:
-            print(f"Task {task_id} not found.")
-        else:
-            conn.commit()
+            present_task(tasks)
+
+            task_id = int(input("\nEnter the task ID to delete: "))
+
+            cursor.execute(
+                "DELETE FROM tasks WHERE id = %s",
+                (task_id,)
+            )
+
+            if cursor.rowcount == 0:
+                print(f"Task {task_id} not found.")
+                return
+
             print(f"Task {task_id} deleted successfully.")
-
-    cursor.close()
-    conn.close()
-
 
 def main():
 
