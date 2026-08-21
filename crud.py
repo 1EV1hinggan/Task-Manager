@@ -27,29 +27,41 @@ def get_tasks(session, user_id):
 
 
 def create_task(session, title, user):
-    task = Task(
-        title=title,
-        user=user
-    )
+    try:
+        task = Task(
+            title=title,
+            user=user
+        )
 
-    session.add(task)
-    session.commit()
-    session.refresh(task)
+        session.add(task)
+        session.commit()
+        session.refresh(task)
 
-    return task
+        return task
+
+    except:
+        session.rollback()
+        raise
 
 
 
 def update_task(session, task, completed):
-    task.completed = completed
+    try:
+        task.completed = completed
 
-    session.commit()
-    session.refresh(task)
+        session.commit()
+        session.refresh(task)
 
-    return task
-
+        return task
+    except:
+        session.rollback()
+        raise
 
 
 def delete_task(session, task):
-    session.delete(task)
-    session.commit()
+    try:
+        session.delete(task)
+        session.commit()
+    except:
+        session.rollback()
+        raise
