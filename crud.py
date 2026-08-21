@@ -4,19 +4,33 @@ from models import Task
 
 
 
-def get_tasks(session):
-    statement = select(Task).order_by(Task.id)
+def get_task(session, task_id, user_id):
+    statement = (
+        select(Task)
+        .where(
+            Task.id == task_id,
+            Task.user_id == user_id
+        )
+    )
+
+    return session.scalars(statement).first()
+
+def get_tasks(session, user_id):
+    statement = (
+        select(Task)
+        .where(
+            Task.user_id == user_id
+        )
+    )
+
     return session.scalars(statement).all()
 
 
-
-def get_task(session, task_id):
-    return session.get(Task, task_id)
-
-
-
-def create_task(session, title):
-    task = Task(title=title)
+def create_task(session, title, user_id):
+    task = Task(
+        title=title,
+        user_id=user_id
+    )
 
     session.add(task)
     session.commit()
