@@ -26,10 +26,10 @@ def get_tasks(session, user_id):
     return session.scalars(statement).all()
 
 
-def create_task(session, title, user_id):
+def create_task(session, title, user):
     task = Task(
         title=title,
-        user_id=user_id
+        user=user
     )
 
     session.add(task)

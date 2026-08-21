@@ -57,7 +57,7 @@ def create_task(
         return crud.create_task(
             session,
             task_data.title,
-            user.id
+            user
         )
 
 
