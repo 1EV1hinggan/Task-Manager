@@ -21,16 +21,19 @@ def get_tasks(session, user_id):
         .where(
             Task.user_id == user_id
         )
+        .order_by(
+            Task.id
+        )
     )
 
     return session.scalars(statement).all()
 
 
-def create_task(session, title, user):
+def create_task(session, title, user_id):
     try:
         task = Task(
             title=title,
-            user=user
+            user_id=user_id
         )
 
         session.add(task)

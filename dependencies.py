@@ -17,22 +17,24 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
             algorithms=[ALGORITHM]
         )
 
-        username = payload.get("sub")
+        user_id = payload.get("sub")
 
-        if username is None:
+        if user_id is None:
             raise HTTPException(
                 status_code=401,
                 detail="Invalid token"
             )
 
-    except jwt.InvalidTokenError:
+        user_id = int(user_id)
+
+    except (jwt.InvalidTokenError, ValueError):
         raise HTTPException(
             status_code=401,
             detail="Invalid token"
         )
 
     with SessionLocal() as session:
-        statement = select(User).where(User.username == username)
+        statement = select(User).where(User.id == user_id)
         user = session.scalars(statement).first()
 
         if user is None:

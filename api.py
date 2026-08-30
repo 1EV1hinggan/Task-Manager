@@ -31,8 +31,9 @@ class TaskResponse(BaseModel):
     title: str
     completed: bool
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 
 class UserCreate(BaseModel):
@@ -47,19 +48,18 @@ def get_tasks(user: User = Depends(get_current_user)):
         return crud.get_tasks(session, user.id)
 
 
-
 @app.post("/tasks", response_model=TaskResponse, status_code=201)
 def create_task(
-    task_data: TaskCreate,
+    task: TaskCreate,
     user: User = Depends(get_current_user)
 ):
     with SessionLocal() as session:
+
         return crud.create_task(
             session,
-            task_data.title,
-            user
+            task.title,
+            user.id
         )
-
 
 
 @app.put("/tasks/{task_id}", response_model=TaskResponse)
@@ -165,7 +165,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
             )
 
         access_token = auth.create_access_token(
-            user.username
+            user.id
         )
 
         return {
