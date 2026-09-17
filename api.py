@@ -2,10 +2,13 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
+
 from models import User
 
 from dependencies import get_current_user
-from database import SessionLocal
+from database import get_session
 
 import crud
 import auth
@@ -42,133 +45,133 @@ class UserCreate(BaseModel):
 
 
 @app.get("/tasks", response_model=list[TaskResponse])
-def get_tasks(user: User = Depends(get_current_user)):
-    with SessionLocal() as session:
-
-        return crud.get_tasks(session, user.id)
+def get_tasks(
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    return crud.get_tasks(session, user.id)
 
 
 @app.post("/tasks", response_model=TaskResponse, status_code=201)
 def create_task(
     task: TaskCreate,
-    user: User = Depends(get_current_user)
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
 ):
-    with SessionLocal() as session:
-
-        return crud.create_task(
-            session,
-            task.title,
-            user.id
-        )
+    return crud.create_task(
+        session,
+        task.title,
+        user.id
+    )
 
 
 @app.put("/tasks/{task_id}", response_model=TaskResponse)
 def update_task(
     task_id: int,
     task_data: TaskUpdate,
-    user: User = Depends(get_current_user)
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
 ):
-    with SessionLocal() as session:
+    task = crud.get_task(
+        session,
+        task_id,
+        user.id
+    )
 
-        task = crud.get_task(
-            session,
-            task_id,
-            user.id
+    if not task:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found"
         )
 
-        if not task:
-            raise HTTPException(
-                status_code=404,
-                detail="Task not found"
-            )
-
-        return crud.update_task(
-            session,
-            task,
-            task_data.completed
-        )
+    return crud.update_task(
+        session,
+        task,
+        task_data.completed
+    )
 
 
 
 @app.delete("/tasks/{task_id}", status_code=204)
 def delete_task(
     task_id: int,
-    user: User = Depends(get_current_user)
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
 ):
-    with SessionLocal() as session:
+    task = crud.get_task(
+        session,
+        task_id,
+        user.id
+    )
 
-        task = crud.get_task(
-            session,
-            task_id,
-            user.id
+    if not task:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found"
         )
 
-        if not task:
-            raise HTTPException(
-                status_code=404,
-                detail="Task not found"
-            )
+    crud.delete_task(session, task)
 
-        crud.delete_task(session, task)
-
-        return
+    return
 
 @app.post("/register")
-def register(user_data: UserCreate):
-    with SessionLocal() as session:
+def register(
+    user_data: UserCreate,
+    session: Session = Depends(get_session)
+):
+    existing_user = auth_crud.get_user_by_username(
+        session,
+        user_data.username
+    )
 
-        existing_user = auth_crud.get_user_by_username(
-            session,
-            user_data.username
+    if existing_user:
+        raise HTTPException(
+            status_code=409,
+            detail="Username already exists"
         )
 
-        if existing_user:
-            raise HTTPException(
-                status_code=409,
-                detail="Username already exists"
-            )
+    user = auth_crud.create_user(
+        session,
+        user_data.username,
+        user_data.password
+    )
 
-        user = auth_crud.create_user(
-            session,
-            user_data.username,
-            user_data.password
-        )
-
-        return {
-            "message": "User registered successfully",
-            "username": user.username
-        }
+    return {
+        "message": "User registered successfully",
+        "username": user.username
+    }
 
 
 @app.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    with SessionLocal() as session:
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: Session = Depends(get_session)
+):
+    user = auth_crud.get_user_by_username(
+        session,
+        form_data.username
+    )
 
-        user = auth_crud.get_user_by_username(
-            session,
-            form_data.username
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password"
         )
 
-        if not user:
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid username or password"
-            )
-
-        if not auth.verify_password(
-            form_data.password,
-            user.password
-        ):
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid username or password"
-            )
-
-        access_token = auth.create_access_token(
-            user.id
+    if not auth.verify_password(
+        form_data.password,
+        user.password
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password"
         )
 
-        return {
-            "access_token": access_token,
-            "token_type": "bearer"
-        }
+    access_token = auth.create_access_token(
+        user.id
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }

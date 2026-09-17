@@ -2,14 +2,20 @@ from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from auth import SECRET_KEY, ALGORITHM
-from database import SessionLocal
+from database import get_session
 from models import User
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    session: Session = Depends(get_session)
+):
     try:
         payload = jwt.decode(
             token,
@@ -33,14 +39,13 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
             detail="Invalid token"
         )
 
-    with SessionLocal() as session:
-        statement = select(User).where(User.id == user_id)
-        user = session.scalars(statement).first()
+    statement = select(User).where(User.id == user_id)
+    user = session.scalars(statement).first()
 
-        if user is None:
-            raise HTTPException(
-                status_code=401,
-                detail="User not found"
-            )
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="User not found"
+        )
 
-        return user
+    return user

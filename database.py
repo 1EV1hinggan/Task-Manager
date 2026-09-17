@@ -5,7 +5,7 @@ import os
 
 DATABASE_URL = (
     "postgresql+psycopg://postgres:"
-    f"{os.getenv('DB_PASSWORD')}@localhost/task_manager"
+    f"{os.getenv('DB_PASSWORD')}@db/task_manager"
 )
 
 engine = create_engine(DATABASE_URL)
@@ -15,3 +15,11 @@ SessionLocal = sessionmaker(
     autoflush=False,
     autocommit=False
 )
+
+def get_session():
+    session = SessionLocal()
+
+    try:
+        yield session
+    finally:
+        session.close()

@@ -2,6 +2,7 @@ from pwdlib import PasswordHash
 
 
 import jwt
+import os
 from datetime import datetime, timedelta, timezone
 
 
@@ -9,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 password_hash = PasswordHash.recommended()
 
 
-SECRET_KEY = "development-secret-key-change-this-to-a-real-secret"
+SECRET_KEY = os.getenv("JWT_SECRET")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
