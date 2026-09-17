@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg[binary]
+pydantic
+pwdlib
+argon2-cffi
+PyJWT
+python-multipart
+python-dotenv
+
+pytest
+httpx
